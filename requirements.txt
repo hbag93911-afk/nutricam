@@ -1,8 +1,9 @@
 streamlit
-opencv-python
+opencv-python-headless
 Pillow
 pandas
 plotly
 numpy
 transformers
 torch
+# Note: do not install both opencv-python and opencv-python-headless together in the same environment.

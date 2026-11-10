@@ -92,7 +92,7 @@ if page == "1) 사용자 기본정보":
         gender = st.selectbox(
             "성별",
             ["여성", "남성", "기타"],
-            index=(["여성", "남성", "기타"].index(latest["gender"]) if latest else 0),
+            index=0,
         )
         height_cm = st.number_input(
             "키(cm)",

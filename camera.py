@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import io
 from datetime import datetime
 from pathlib import Path
 
-import cv2
 import numpy as np
 import streamlit as st
 from PIL import Image
+
+try:
+    import cv2
+except ImportError:  # pragma: no cover - fallback when OpenCV is unavailable
+    cv2 = None
 
 
 IMAGES_DIR = Path(__file__).resolve().parent / "data" / "images"
@@ -14,18 +19,31 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _decode_image_bytes(image_bytes: bytes) -> dict | None:
-    np_buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    np_image_bgr = cv2.imdecode(np_buffer, cv2.IMREAD_COLOR)
-    if np_image_bgr is None:
-        return None
-
-    np_image_rgb = cv2.cvtColor(np_image_bgr, cv2.COLOR_BGR2RGB)
-    pil_image = Image.fromarray(np_image_rgb)
-
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     image_path = IMAGES_DIR / f"meal_{timestamp}.jpg"
-    cv2.imwrite(str(image_path), np_image_bgr)
 
+    if cv2 is not None and np is not None:
+        np_buffer = np.frombuffer(image_bytes, dtype=np.uint8)
+        np_image_bgr = cv2.imdecode(np_buffer, cv2.IMREAD_COLOR)
+        if np_image_bgr is None:
+            return None
+
+        np_image_rgb = cv2.cvtColor(np_image_bgr, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(np_image_rgb)
+        cv2.imwrite(str(image_path), np_image_bgr)
+        return {
+            "pil_image": pil_image,
+            "np_image": np_image_rgb,
+            "image_path": str(image_path),
+        }
+
+    try:
+        pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception:
+        return None
+
+    np_image_rgb = np.asarray(pil_image)
+    pil_image.save(image_path, format="JPEG")
     return {
         "pil_image": pil_image,
         "np_image": np_image_rgb,
